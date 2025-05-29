@@ -1,0 +1,37 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Book Room {{ room.number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Book Room {{ room.number }}</h2>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h5>Room Details</h5>
+                    <p><strong>Type:</strong> {{ room.get_room_type_display }}</p>
+                    <p><strong>Price per night:</strong> ${{ room.price_per_night }}</p>
+                    <p><strong>Capacity:</strong> {{ room.capacity }} person(s)</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="check_in" class="form-label">Check-in Date</label>
+                        <input type="date" class="form-control" id="check_in" name="check_in" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="check_out" class="form-label">Check-out Date</label>
+                        <input type="date" class="form-control" id="check_out" name="check_out" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                    <a href="{% url 'bookings:room_list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

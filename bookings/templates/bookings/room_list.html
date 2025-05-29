@@ -1,0 +1,34 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Available Rooms{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Available Rooms</h1>
+
+<div class="row">
+    {% for room in rooms %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Room {{ room.number }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ room.get_room_type_display }}</h6>
+                <p class="card-text">{{ room.description }}</p>
+                <ul class="list-unstyled">
+                    <li><strong>Capacity:</strong> {{ room.capacity }} person(s)</li>
+                    <li><strong>Price per night:</strong> ${{ room.price_per_night }}</li>
+                </ul>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'bookings:book_room' room.id %}" class="btn btn-primary">Book Now</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-secondary">Login to Book</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <p class="text-center">No rooms available at the moment.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

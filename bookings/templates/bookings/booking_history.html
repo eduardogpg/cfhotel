@@ -1,0 +1,49 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Bookings</h1>
+    <a href="{% url 'bookings:room_list' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Book New Room
+    </a>
+</div>
+
+{% if bookings %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Room</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Total Price</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.id }}</td>
+                    <td>Room {{ booking.room.number }} ({{ booking.room.get_room_type_display }})</td>
+                    <td>{{ booking.check_in_date }}</td>
+                    <td>{{ booking.check_out_date }}</td>
+                    <td>${{ booking.total_price }}</td>
+                    <td>
+                        <span class="badge {% if booking.status == 'CONFIRMED' %}bg-success{% elif booking.status == 'PENDING' %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        You haven't made any bookings yet. <a href="{% url 'bookings:room_list' %}">Browse available rooms</a>
+    </div>
+{% endif %}
+{% endblock %} 
