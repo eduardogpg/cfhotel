@@ -2,12 +2,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Room, Booking
+from .models import Room, Booking, BookingLog
 from datetime import datetime
 
 def room_list(request):
     rooms = Room.objects.filter(is_available=True)
     return render(request, 'bookings/room_list.html', {'rooms': rooms})
+
+def send_booking_confirmation_email(booking: Booking):
+    print(f"Sending email for booking {booking.id}")
 
 @login_required
 def book_room(request, room_id):
@@ -40,6 +43,14 @@ def book_room(request, room_id):
                 check_out_date=check_out_date,
                 total_price=total_price
             )
+
+            BookingLog.objects.create(
+                booking=booking,
+                action='create',
+                user=request.user
+            )
+
+            send_booking_confirmation_email(booking)
             
             messages.success(request, 'Booking created successfully!')
             return redirect('bookings:booking_history')

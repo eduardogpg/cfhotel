@@ -39,3 +39,14 @@ class Booking(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+
+class BookingLog(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    action = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Booking {self.booking.id} - {self.action} - {self.timestamp}"
+    
