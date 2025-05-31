@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import Room, Booking, BookingLog
 from datetime import datetime
+from bookings.services.service import BookingService, BookingEmailService
+from datetime import datetime
 
 def room_list(request):
     rooms = Room.objects.filter(is_available=True)
@@ -20,44 +22,26 @@ def book_room(request, room_id):
         check_in = request.POST.get('check_in')
         check_out = request.POST.get('check_out')
         
+        check_in = datetime.strptime(check_in, '%Y-%m-%d').date()
+        check_out = datetime.strptime(check_out, '%Y-%m-%d').date()
+
         try:
-            check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
-            check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-            
-            if check_in_date < timezone.now().date():
-                messages.error(request, 'Check-in date cannot be in the past')
-                return redirect('book_room', room_id=room_id)
-            
-            if check_out_date <= check_in_date:
-                messages.error(request, 'Check-out date must be after check-in date')
-                return redirect('book_room', room_id=room_id)
-            
-            # Calculate number of nights and total price
-            nights = (check_out_date - check_in_date).days
-            total_price = room.price_per_night * nights
-            
-            booking = Booking.objects.create(
+            mail_service = BookingEmailService()
+            booking_service = BookingService(mail_service)
+
+            booking = booking_service.create_booking(
                 user=request.user,
                 room=room,
-                check_in_date=check_in_date,
-                check_out_date=check_out_date,
-                total_price=total_price
+                check_in_date=check_in,
+                check_out_date=check_out
             )
-
-            BookingLog.objects.create(
-                booking=booking,
-                action='create',
-                user=request.user
-            )
-
-            send_booking_confirmation_email(booking)
             
             messages.success(request, 'Booking created successfully!')
             return redirect('bookings:booking_history')
-            
-        except ValueError:
-            messages.error(request, 'Invalid date format')
-            return redirect('book_room', room_id=room_id)
+        
+        except Exception as e:
+            print("\n\n\n\n", e)
+            messages.error(request, 'No es posible crear la reservación. Contacte con soporte.')
     
     return render(request, 'bookings/book_room.html', {'room': room})
 
