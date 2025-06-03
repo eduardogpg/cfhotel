@@ -39,9 +39,6 @@ class BookingService:
         if not room:
             raise BookingError('Room requerido')
         
-        if not room.is_available:
-            raise BookingError('El cuarto no esta disponible')
-
         if not check_in_date or not check_out_date:
             raise BookingError('check_in_date y check_out_date requerido')
         

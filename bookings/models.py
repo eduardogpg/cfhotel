@@ -1,6 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from bookings.managers import BookingManager
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
 class Room(models.Model):
     ROOM_TYPES = [
         ('SINGLE', 'Single Room'),
@@ -34,6 +39,8 @@ class Booking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    objects = BookingManager()
+    
     def __str__(self):
         return f"Booking {self.id} - {self.user.username} - Room {self.room.number}"
     
@@ -50,3 +57,11 @@ class BookingLog(models.Model):
     def __str__(self):
         return f"Booking {self.booking.id} - {self.action} - {self.timestamp}"
     
+
+@receiver(post_save, sender=Booking)
+@receiver(post_delete, sender=Booking)
+def booking_changed(sender, instance, **kwargs):
+    from django.core.cache import cache
+
+    if instance.user_id:
+        cache.delete('my_booking_history', version=1)
