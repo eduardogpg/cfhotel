@@ -1,4 +1,5 @@
 {% extends 'bookings/base.html' %}
+{% load cache %}
 
 {% block title %}My Bookings{% endblock %}
 
@@ -24,20 +25,22 @@
                 </tr>
             </thead>
             <tbody>
-                {% for booking in bookings %}
-                <tr>
-                    <td>{{ booking.id }}</td>
-                    <td>Room {{ booking.room.number }} ({{ booking.room.get_room_type_display }})</td>
-                    <td>{{ booking.check_in_date }}</td>
-                    <td>{{ booking.check_out_date }}</td>
-                    <td>${{ booking.total_price }}</td>
-                    <td>
-                        <span class="badge {% if booking.status == 'CONFIRMED' %}bg-success{% elif booking.status == 'PENDING' %}bg-warning{% else %}bg-danger{% endif %}">
-                            {{ booking.get_status_display }}
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
+                {% cache 300 latest_bookings %}
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.id }}</td>
+                        <td>Room {{ booking.room.number }} ({{ booking.room.get_room_type_display }})</td>
+                        <td>{{ booking.check_in_date }}</td>
+                        <td>{{ booking.check_out_date }}</td>
+                        <td>${{ booking.total_price }}</td>
+                        <td>
+                            <span class="badge {% if booking.status == 'CONFIRMED' %}bg-success{% elif booking.status == 'PENDING' %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ booking.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endcache %}
             </tbody>
         </table>
     </div>

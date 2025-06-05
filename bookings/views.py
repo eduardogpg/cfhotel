@@ -4,8 +4,13 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import Room, Booking, BookingLog
 from datetime import datetime
-from bookings.services.service import BookingService, BookingEmailService
+from bookings.services.service import BookingService, BookingEmailService, PaymentService
 from datetime import datetime
+import time
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
+from django.core.cache import cache
+from functools import lru_cache
 
 def room_list(request):
     rooms = Room.objects.filter(is_available=True)
@@ -13,6 +18,10 @@ def room_list(request):
 
 def send_booking_confirmation_email(booking: Booking):
     print(f"Sending email for booking {booking.id}")
+
+@lru_cache(maxsize=2)
+def long_time_execute():
+    return 5
 
 @login_required
 def book_room(request, room_id):
@@ -27,7 +36,8 @@ def book_room(request, room_id):
 
         try:
             mail_service = BookingEmailService()
-            booking_service = BookingService(mail_service)
+            payment_service = PaymentService()
+            booking_service = BookingService(mail_service, payment_service)
 
             booking = booking_service.create_booking(
                 user=request.user,
@@ -46,6 +56,26 @@ def book_room(request, room_id):
     return render(request, 'bookings/book_room.html', {'room': room})
 
 @login_required
+# @vary_on_cookie # Usa las cookies del request.
+# @cache_page(60 * 15) # Segundos
 def booking_history(request):
-    bookings = Booking.objects.filter(user=request.user)
-    return render(request, 'bookings/booking_history.html', {'bookings': bookings})
+    key = f'booking_for_user_{request.user.pk}'
+    
+    bookings = cache.get(key)
+    if not bookings:
+        bookings = Booking.objects.bookings_for_user(user=request.user)
+        cache.set(key, bookings, timeout=15 * 60)
+
+    total_bookings = Booking.objects.count()
+    
+    long_time_execute()
+
+    return render(
+        request, 
+        'bookings/booking_history.html', 
+        {
+            'bookings': bookings,
+            'total_bookings':total_bookings
+        }
+    )
+

@@ -1,5 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from django.core.cache import cache
+
 
 class Room(models.Model):
     ROOM_TYPES = [
@@ -18,6 +23,16 @@ class Room(models.Model):
     def __str__(self):
         return f"Room {self.number} - {self.room_type}"
 
+
+class BookingManager(models.Manager):
+
+    def bookings_for_user(self, user):
+        import time
+
+        # time.sleep(5)
+
+        return self.filter(user=user)
+
 class Booking(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
@@ -33,6 +48,8 @@ class Booking(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = BookingManager()
     
     def __str__(self):
         return f"Booking {self.id} - {self.user.username} - Room {self.room.number}"
@@ -49,4 +66,12 @@ class BookingLog(models.Model):
 
     def __str__(self):
         return f"Booking {self.booking.id} - {self.action} - {self.timestamp}"
+
+@receiver(post_save, sender=Booking)
+def invalidate_booking_history(sender, instance, *args, **kwargs):
+    cache.delete(f'booking_for_user_{instance.user.pk}')
     
+    cache.set(
+        f'booking_for_user_{instance.user.pk}', 
+        sender.objects.bookings_for_user(user=instance.user)
+    )
